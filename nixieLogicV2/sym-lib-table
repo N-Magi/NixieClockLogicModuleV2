@@ -1,0 +1,5 @@
+(sym_lib_table
+  (lib (name components)(type Legacy)(uri ${KIPRJMOD}/components.lib)(options "")(descr ""))
+  (lib (name RTC)(type Legacy)(uri "C:/Users/masay/OneDrive - 日本大学/ドキュメント/電子工作工房/コミケ/ニキシー管-6桁/ロジック/Arduino使用ロジック/ArduinoLogic/RTC.lib")(options "")(descr ""))
+  (lib (name dcdc)(type Legacy)(uri "C:/Users/masay/OneDrive - 日本大学/ドキュメント/電子工作工房/コミケ/ニキシー管-6桁/ロジック/Arduino使用ロジック/ArduinoLogic/DCDC.lib")(options "")(descr ""))
+)
