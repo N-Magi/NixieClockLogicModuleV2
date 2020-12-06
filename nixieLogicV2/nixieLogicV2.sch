@@ -723,30 +723,8 @@ F 3 "~" H 5150 1750 50  0001 C CNN
 	1    5150 1550
 	0    -1   -1   0   
 $EndComp
-$Comp
-L Device:C_Small C1
-U 1 1 5FC003DB
-P 4850 1450
-F 0 "C1" V 4750 1350 50  0000 L CNN
-F 1 "0.1uF" V 4950 1350 50  0000 L CNN
-F 2 "Capacitor_SMD:C_0805_2012Metric_Pad1.15x1.40mm_HandSolder" H 4850 1450 50  0001 C CNN
-F 3 "~" H 4850 1450 50  0001 C CNN
-	1    4850 1450
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	4850 1350 4850 1250
-Wire Wire Line
-	4850 1250 5150 1250
-Wire Wire Line
-	5150 1250 5150 1200
 Wire Wire Line
 	5150 1350 5150 1250
-Connection ~ 5150 1250
-Wire Wire Line
-	4850 1800 5150 1800
-Wire Wire Line
-	5150 1800 5150 1750
 $Comp
 L power:GND #PWR02
 U 1 1 5FC003E8
@@ -759,36 +737,7 @@ F 3 "" H 5150 1900 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	5150 1900 5150 1800
-Connection ~ 5150 1800
-Wire Wire Line
 	5200 1250 5150 1250
-$Comp
-L Device:R_Small R1
-U 1 1 5FC003F2
-P 5150 1100
-F 0 "R1" V 5250 1100 50  0000 C CNN
-F 1 "10k" V 5150 1100 50  0000 C CNN
-F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.15x1.40mm_HandSolder" H 5150 1100 50  0001 C CNN
-F 3 "~" H 5150 1100 50  0001 C CNN
-	1    5150 1100
-	-1   0    0    1   
-$EndComp
-Wire Wire Line
-	4850 1550 4850 1800
-$Comp
-L power:+3.3V #PWR01
-U 1 1 5FC003F9
-P 5150 950
-F 0 "#PWR01" H 5150 800 50  0001 C CNN
-F 1 "+3.3V" H 5165 1123 50  0000 C CNN
-F 2 "" H 5150 950 50  0001 C CNN
-F 3 "" H 5150 950 50  0001 C CNN
-	1    5150 950 
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	5150 950  5150 1000
 Text Label 5200 1250 0    50   ~ 0
 EN
 Text Label 6000 1050 2    50   ~ 0
@@ -939,7 +888,7 @@ U 1 1 5FD32783
 P 9700 1600
 F 0 "Q1" V 9650 1400 50  0000 L CNN
 F 1 "2sk3234" V 9900 1450 50  0000 L CNN
-F 2 "Package_TO_SOT_THT:TO-220F-3_Horizontal_TabUp" H 9900 1700 50  0001 C CNN
+F 2 "Package_TO_SOT_THT:TO-220-3_Horizontal_TabDown" H 9900 1700 50  0001 C CNN
 F 3 "~" H 9700 1600 50  0001 C CNN
 	1    9700 1600
 	1    0    0    -1  
@@ -1027,7 +976,7 @@ U 1 1 5FDBB903
 P 10050 800
 F 0 "D2" H 10050 583 50  0000 C CNN
 F 1 "SCS206AGC" H 10050 674 50  0000 C CNN
-F 2 "Package_TO_SOT_THT:TO-220-2_Horizontal_TabUp" H 10050 800 50  0001 C CNN
+F 2 "Package_TO_SOT_THT:TO-220-2_Horizontal_TabDown" H 10050 800 50  0001 C CNN
 F 3 "~" H 10050 800 50  0001 C CNN
 	1    10050 800 
 	-1   0    0    1   
@@ -1268,7 +1217,7 @@ Text Label 8000 2100 2    50   ~ 0
 1PPS
 Wire Wire Line
 	8000 2100 8050 2100
-Text Label 7100 1150 0    50   ~ 0
+Text Label 7100 2150 0    50   ~ 0
 1PPS
 Wire Wire Line
 	7100 1150 7050 1150
@@ -1295,7 +1244,7 @@ Wire Wire Line
 	6000 2350 6050 2350
 Wire Wire Line
 	6050 2150 6000 2150
-Text Label 7100 1450 0    50   ~ 0
+Text Label 7100 2250 0    50   ~ 0
 SW_P
 Wire Wire Line
 	7100 1450 7050 1450
@@ -1303,9 +1252,6 @@ Text Label 7100 2450 0    50   ~ 0
 SW_N
 Wire Wire Line
 	7100 2450 7050 2450
-NoConn ~ 7050 2350
-NoConn ~ 7050 2250
-NoConn ~ 7050 2150
 Wire Wire Line
 	5650 950  6050 950 
 $Comp
@@ -1335,4 +1281,100 @@ $EndComp
 NoConn ~ 9700 3700
 NoConn ~ 9700 3400
 NoConn ~ 8500 2700
+Wire Wire Line
+	5150 1750 5150 1900
+$Comp
+L Memory_EEPROM:24LC64 U3
+U 1 1 5FB93803
+P 6550 3850
+F 0 "U3" H 6300 4100 50  0000 C CNN
+F 1 "24LC64" H 6750 3600 50  0000 C CNN
+F 2 "Package_DIP:DIP-8_W7.62mm_Socket_LongPads" H 6550 3850 50  0001 C CNN
+F 3 "http://ww1.microchip.com/downloads/en/DeviceDoc/21189f.pdf" H 6550 3850 50  0001 C CNN
+	1    6550 3850
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:+3.3V #PWR01
+U 1 1 5FB94E4F
+P 6550 3500
+F 0 "#PWR01" H 6550 3350 50  0001 C CNN
+F 1 "+3.3V" H 6565 3673 50  0000 C CNN
+F 2 "" H 6550 3500 50  0001 C CNN
+F 3 "" H 6550 3500 50  0001 C CNN
+	1    6550 3500
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	6550 3500 6550 3550
+$Comp
+L power:GND #PWR026
+U 1 1 5FBA1D81
+P 6550 4200
+F 0 "#PWR026" H 6550 3950 50  0001 C CNN
+F 1 "GND" H 6555 4027 50  0000 C CNN
+F 2 "" H 6550 4200 50  0001 C CNN
+F 3 "" H 6550 4200 50  0001 C CNN
+	1    6550 4200
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	6550 4200 6550 4150
+Wire Wire Line
+	6550 3500 6050 3500
+Wire Wire Line
+	6050 3500 6050 3750
+Wire Wire Line
+	6050 3750 6150 3750
+Connection ~ 6550 3500
+Wire Wire Line
+	6150 3850 6150 3950
+Wire Wire Line
+	6150 3950 6150 4200
+Wire Wire Line
+	6150 4200 6550 4200
+Connection ~ 6150 3950
+Connection ~ 6550 4200
+$Comp
+L Device:R_Small R1
+U 1 1 5FBF9365
+P 7000 4100
+F 0 "R1" V 6950 4050 50  0000 C CNN
+F 1 "10k" V 7000 4100 50  0000 C CNN
+F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.15x1.40mm_HandSolder" H 7000 4100 50  0001 C CNN
+F 3 "~" H 7000 4100 50  0001 C CNN
+	1    7000 4100
+	-1   0    0    1   
+$EndComp
+Wire Wire Line
+	7000 4000 7000 3950
+Wire Wire Line
+	7000 3950 6950 3950
+Wire Wire Line
+	7000 4200 6550 4200
+Wire Wire Line
+	7100 2250 7050 2250
+Wire Wire Line
+	7100 2150 7050 2150
+Text Label 7050 3950 0    50   ~ 0
+WP
+Wire Wire Line
+	7050 3950 7000 3950
+Connection ~ 7000 3950
+Text Label 7100 2350 0    50   ~ 0
+WP
+Wire Wire Line
+	7100 2350 7050 2350
+Text Label 7000 3850 0    50   ~ 0
+SCL
+Wire Wire Line
+	7000 3850 6950 3850
+Text Label 7100 1150 0    50   ~ 0
+SCL
+Wire Wire Line
+	7000 3750 6950 3750
+Text Label 7000 3750 0    50   ~ 0
+SDA
+Text Label 7100 1450 0    50   ~ 0
+SDA
 $EndSCHEMATC
