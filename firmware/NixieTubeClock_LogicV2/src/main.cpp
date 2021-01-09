@@ -7,9 +7,9 @@
 #include "time.h"
 #include <WiFi.h>
 #include <FreeRTOS.h>
+#include "CliTerminal.h"
 
-const char *ssid = "747747";
-const char *password = "7e3aba54aa";
+//#define TIME_OUT 5000
 
 Nixie nixie;
 DS3234 rtc;
@@ -17,15 +17,27 @@ DriveBoard board;
 IPAddress addr;
 Adjustment adj;
 
+Cli_Terminal terminal(100);
+
+uint TIME_OUT = 5000;
+char NTP_SERVER[100] = "ntp.nict.jp";
 int mode = CLOCK;
 int schematic[6][2];
 long elapsed_time = 0;
 bool blinkFlag = false;
 
+//*** PROTTYPE ***//
 void IRAM_ATTR Display_Interrupt(void) { nixie.ShowDisplay(); }
 
 int *SetSchematicByTimeCode(int d1, int d2, int d3);
-void mode_adjustment(uint8_t SwState);
+void mode_ManualAdjustment(uint8_t SwState);
+void mode_Ntpadjustment(uint8_t SwState);
+void mode_SerialSetting(char *command, char *data);
+void AdjustNtp();
+void WifiEvent(WiFiEvent_t e);
+void WiFiConnect(char *ssid, char *pass);
+void WiFiConnect();
+void SetupWiFi(String str);
 
 int LimitDateValue(int parameter, int max_time, int min_time)
 {
@@ -35,46 +47,6 @@ int LimitDateValue(int parameter, int max_time, int min_time)
     parameter = max_time;
   return parameter;
 }
-
-void WifiEvent(WiFiEvent_t e);
-
-void setup()
-{
-  
-  // put your setup code here, to run once:
-  Serial.begin(115200);
-
-  Serial.println(board.MesureVoltage());
-  
-  //Connect Wifi
-  if (!WiFi.isConnected())
-  {
-    WiFi.disconnect(true, true);
-    WiFi.begin(ssid, password);
-    WiFi.onEvent(WifiEvent);
-  }
-}
-
-void WifiEvent(WiFiEvent_t e)
-{
-  if (e == SYSTEM_EVENT_STA_GOT_IP)
-  {
-    IPAddress localAddr = WiFi.localIP();
-    Serial.println(localAddr);
-    configTime(32400, 0, "192.168.10.34");
-    struct tm timeinfo;
-    getLocalTime(&timeinfo);
-    // Serial.println(getYear(days));
-    // Serial.println(getMonth(days));
-    // Serial.println(mod);
-    // Serial.println(ntpcli.getHours());
-    // Serial.println(ntpcli.getMinutes());
-    // Serial.println(ntpcli.getSeconds());
-    rtc.SetDateTime(timeinfo.tm_year % 100, timeinfo.tm_mon, timeinfo.tm_mday, timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
-  }
-}
-// Check Internet Connection
-
 int *SetSchematicByTimeCode(int d1, int d2, int d3)
 {
   schematic[0][0] = d1 / 10;
@@ -91,52 +63,125 @@ int *SetSchematicByTimeCode(int d1, int d2, int d3)
   return *schematic;
 }
 
+void setup()
+{
+  Serial.begin(115200);
+  Serial.print("Tube Voltage: ");
+  Serial.println(board.MesureVoltage());
+
+  terminal.commands[0] = Command("volt", [](String str) -> void { Serial.println(board.MesureVoltage()); });
+  terminal.commands[1] = Command("wifi", SetupWiFi);
+  terminal.commands[2] = Command("timeout", [](String str) -> void {
+    if (str.length() <= 0)
+    {
+      Serial.print("Current WiFi Time Out is Setting in...");
+      Serial.println(TIME_OUT);
+      return;
+    }
+    TIME_OUT = str.toInt();
+  });
+  terminal.commands[3] = Command("ntp", [](String str) -> void {
+    if (str.length() <= 0)
+    {
+      Serial.print("Adusting Time By Ntp via ");
+      Serial.println(NTP_SERVER);
+      AdjustNtp();
+      Serial.println("Completed!!");
+      return;
+    }
+    Serial.print("NTP Server address changed To  ");
+    Serial.println(str);
+    str.toCharArray(NTP_SERVER,sizeof(NTP_SERVER));
+    Serial.println("Completed!!");
+  });
+  WiFiConnect();
+
+  Serial.print("WiFi Connection: ");
+  Serial.println(WiFi.isConnected() ? "true" : "false");
+}
+
 void loop()
 {
-  Display_Interrupt();
+  Display_Interrupt(); // manually Refresh Display
+
+  terminal.cli_cal();
+
   uint8_t SwState = board.ReadKeyState();
 
   if (mode == CLOCK)
   {
-    //int hour = rtc.GetTime(SECOND);
-    //Serial.println(hour);
     nixie.SetSchematic(SetSchematicByTimeCode(rtc.GetTime(HOUR), rtc.GetTime(MINUTE), rtc.GetTime(SECOND)));
-
-    //nixie.ShowDisplay();
-
     if (bitRead(SwState, 7)) //ACCEPT
       mode = DIVERGENCE;
     if (bitRead(SwState, 6)) //BACK
+    {
       mode = ADJUSTMENT;
-    adj.selectIndex = YEAR;
-    adj.year = rtc.GetTime(YEAR);
-    adj.month = rtc.GetTime(MONTH);
-    adj.day = rtc.GetTime(DAY);
-    adj.hour = rtc.GetTime(HOUR);
-    adj.minute = rtc.GetTime(MINUTE);
-    adj.second = rtc.GetTime(SECOND);
+      if (WiFi.isConnected())
+        mode = NTPADJUSTMENT;
+      adj.selectIndex = YEAR;
+      adj.year = rtc.GetTime(YEAR);
+      adj.month = rtc.GetTime(MONTH);
+      adj.day = rtc.GetTime(DAY);
+      adj.hour = rtc.GetTime(HOUR);
+      adj.minute = rtc.GetTime(MINUTE);
+      adj.second = rtc.GetTime(SECOND);
+    }
     return;
   }
 
   if (mode == DIVERGENCE)
   {
     mode = CLOCK;
-    // if (bitRead(SwState, 4)) //ACCEPT
-    //     adj.selectIndex = MONTH;
-    // if (bitRead(SwState, 5)) //BACK
-    //     mode = clock;
     return;
   }
 
   if (mode == ADJUSTMENT)
   {
-    //Serial.println("MODE:ADUSTMENT");
-    mode_adjustment(SwState);
+    mode_ManualAdjustment(SwState);
+    return;
+  }
+  if (mode == NTPADJUSTMENT)
+  {
+    mode_Ntpadjustment(SwState);
     return;
   }
 }
 
-void mode_adjustment(uint8_t SwState)
+void mode_Ntpadjustment(uint8_t SwState)
+{
+  if (bitRead(SwState, 7)) //ACCEPT
+  {
+    AdjustNtp();
+    mode = CLOCK;
+  }
+  if (bitRead(SwState, 6)) //BACK
+    mode = CLOCK;
+  if (bitRead(SwState, 5)) //-
+    mode = ADJUSTMENT;
+  if (bitRead(SwState, 4)) //+
+    mode = ADJUSTMENT;
+
+  if (elapsed_time + 350 <= millis())
+  {
+    blinkFlag = blinkFlag ? false : true;
+    elapsed_time = millis();
+  }
+
+  if (blinkFlag)
+  {
+    SetSchematicByTimeCode(adj.hour, adj.minute, adj.second);
+    nixie.SetSchematic(*schematic);
+    return;
+  }
+  for (int n = 0; n <= 5; n++)
+  {
+    schematic[n][0] = 10;
+    schematic[n][1] = DP_NONE;
+  }
+  nixie.SetSchematic(*schematic);
+}
+
+void mode_ManualAdjustment(uint8_t SwState)
 {
   switch (adj.selectIndex)
   {
@@ -198,7 +243,6 @@ void mode_adjustment(uint8_t SwState)
     }
     if (bitRead(SwState, 6)) //BACK
       adj.selectIndex = MINUTE;
-    break;
     if (bitRead(SwState, 5)) //-
       adj.second--;
     if (bitRead(SwState, 4)) //+
@@ -290,4 +334,75 @@ void mode_adjustment(uint8_t SwState)
     SetSchematicByTimeCode(adj.hour, adj.minute, adj.second);
   }
   nixie.SetSchematic(*schematic);
+}
+
+void WifiEvent(WiFiEvent_t e)
+{
+}
+
+void AdjustNtp()
+{
+  configTime(32400, 0, NTP_SERVER);
+  struct tm timeinfo;
+  getLocalTime(&timeinfo);
+  rtc.SetDateTime(timeinfo.tm_year % 100, timeinfo.tm_mon, timeinfo.tm_mday, timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
+}
+// Check Internet Connection
+void WiFiConnect()
+{
+  WiFiConnect("", "");
+}
+void WiFiConnect(char *ssid = "", char *pass = "")
+{
+  //Connect Wifi
+  WiFi.disconnect(true, true);
+  if (sizeof(ssid) > 0)
+    WiFi.begin(ssid, pass);
+  WiFi.begin();
+  Serial.println("Tries Connect WiFi");
+
+  uint16_t time = millis();
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    Serial.print("=");
+    delay(250);
+    if (time + TIME_OUT <= millis())
+    {
+      Serial.println("TIMEOUT!!!");
+      break;
+    }
+  }
+  Serial.println("Connected!!");
+  WiFi.onEvent(WifiEvent);
+}
+///Str =SSID Password
+///Str =
+void SetupWiFi(String str)
+{
+  if (str.length() <= 0)
+  {
+    Serial.print("Current ESSID= ");
+    Serial.println(WiFi.SSID());
+    Serial.print("WiFi Connection= ");
+    Serial.println(WiFi.isConnected() ? "true" : "false");
+    Serial.print("WiFi Channel= ");
+    Serial.print(WiFi.channel());
+
+    Serial.print("Local IP Address= ");
+    Serial.println(WiFi.localIP().toString());
+    Serial.print("/");
+    Serial.println(WiFi.subnetMask().toString());
+    Serial.println(WiFi.localIPv6().toString());
+    Serial.print("Mac Address= ");
+    Serial.println(WiFi.macAddress());
+    Serial.print("DNS Address= ");
+    Serial.println(WiFi.dnsIP().toString());
+    return;
+  }
+  int space = str.indexOf(" ");
+  char ssid[32];
+  char pass[64];
+  str.substring(0, space).toCharArray(ssid, sizeof(ssid) / sizeof(ssid[0]), 0);
+  str.substring(++space, str.length()).toCharArray(pass, sizeof(pass) / sizeof(ssid[0]), 0);
+  WiFiConnect(ssid, pass);
 }

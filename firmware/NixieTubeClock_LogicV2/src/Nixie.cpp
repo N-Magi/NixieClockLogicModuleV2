@@ -55,8 +55,10 @@ void Nixie::ActivateRegister(int pin_register)
 
     //delay(1);
     digitalWrite(pin_register, 1);
-    delayMicroseconds(100);
+    delayMicroseconds(50);
     digitalWrite(pin_register, 0);
+    delayMicroseconds(50);
+    digitalWrite(pin_register,1);
 }
 
 int Nixie::GetShiftCode(int number[2])

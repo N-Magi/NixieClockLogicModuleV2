@@ -9,7 +9,7 @@
 #define NUM_RCLK 27 //14
 #define NUM_CLR 26 //13
 
-#define OFF_TIME 250 //Micro Seconds
+#define OFF_TIME 300 //Micro Seconds
 #define ON_TIME 500 //Micro Seconds
 
 class Nixie
