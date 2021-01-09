@@ -5,7 +5,8 @@ enum Mode
 {
     ADJUSTMENT = 0,
     CLOCK = 1,
-    DIVERGENCE = 2
+    DIVERGENCE = 2,
+    NTPADJUSTMENT = 3
 };
 
 class Adjustment
