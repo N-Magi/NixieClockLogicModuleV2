@@ -25,6 +25,7 @@ int mode = CLOCK;
 int schematic[6][2];
 long elapsed_time = 0;
 bool blinkFlag = false;
+bool divergenceFlag = false;
 
 //*** PROTTYPE ***//
 void IRAM_ATTR Display_Interrupt(void) { nixie.ShowDisplay(); }
@@ -33,6 +34,7 @@ int *SetSchematicByTimeCode(int d1, int d2, int d3);
 void mode_ManualAdjustment(uint8_t SwState);
 void mode_Ntpadjustment(uint8_t SwState);
 void mode_SerialSetting(char *command, char *data);
+void mode_DivergenceClock();
 void AdjustNtp();
 void WifiEvent(WiFiEvent_t e);
 void WiFiConnect(char *ssid, char *pass);
@@ -69,12 +71,14 @@ void setup()
   Serial.print("Tube Voltage: ");
   Serial.println(board.MesureVoltage());
 
+  randomSeed(analogRead(0)); 
+
   terminal.commands[0] = Command("volt", [](String str) -> void { Serial.println(board.MesureVoltage()); });
   terminal.commands[1] = Command("wifi", SetupWiFi);
   terminal.commands[2] = Command("timeout", [](String str) -> void {
     if (str.length() <= 0)
     {
-      Serial.print("Current WiFi Time Out is Setting in...");
+      Serial.print("Current WiFi TimeOut is Setting in...");
       Serial.println(TIME_OUT);
       return;
     }
@@ -131,9 +135,13 @@ void loop()
 
   if (mode == DIVERGENCE)
   {
-    mode = CLOCK;
+    if(bitRead(SwState,7)) mode = CLOCK;
+    if(bitRead(SwState,6)) mode = CLOCK;
+    mode_DivergenceClock();
     return;
   }
+  
+  
 
   if (mode == ADJUSTMENT)
   {
@@ -335,6 +343,57 @@ void mode_ManualAdjustment(uint8_t SwState)
   }
   nixie.SetSchematic(*schematic);
 }
+
+void mode_DivergenceClock(){
+  int sec = rtc.GetTime(SECOND);
+  int minute = rtc.GetTime(MINUTE);
+  int hour = rtc.GetTime(HOUR);
+
+  if(!divergenceFlag){
+    
+    if(minute % 3 == 0) {
+      if(sec == 0){
+        divergenceFlag = true;
+      }
+    }
+  }
+
+  if(divergenceFlag){
+    uint8_t numbers[6];
+    
+    for(int n = 0; n < sizeof(numbers); n++){
+      schematic[n][0] = random(0,10);
+    }
+    schematic[1][1] = DP_RDP;
+    schematic[3][1] = DP_RDP;
+    schematic[5][1] = DP_RDP;
+
+    if(elapsed_time + 500 < millis()){
+    schematic[2][0] = minute / 10;
+    }
+    if(elapsed_time + 1000 < millis()){
+      schematic[4][0] = sec / 10;
+    }
+    if(elapsed_time + 1500 < millis()){
+      schematic[4][0] = hour / 10;
+    }
+    if(elapsed_time + 2000 < millis()){
+      schematic[4][0] = minute % 10;
+    }
+    if(elapsed_time + 2500 < millis()){
+      schematic[4][0] = hour % 10;
+    }
+    
+  }
+  nixie.SetSchematic(*schematic);
+  if(elapsed_time + 3000 < millis()){
+    divergenceFlag = false;
+    nixie.SetSchematic(SetSchematicByTimeCode(rtc.GetTime(HOUR), rtc.GetTime(MINUTE), rtc.GetTime(SECOND)));
+    elapsed_time = millis;
+  }
+  return;
+}
+
 
 void WifiEvent(WiFiEvent_t e)
 {
