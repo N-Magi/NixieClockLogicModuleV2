@@ -52,6 +52,7 @@ int LimitDateValue(int parameter, int max_time, int min_time)
 int *SetSchematicByTimeCode(int d1, int d2, int d3)
 {
   schematic[0][0] = d1 / 10;
+  schematic[0][1] = DP_NONE;
   schematic[1][0] = d1 % 10;
   schematic[1][1] = DP_RDP;
 
@@ -71,20 +72,22 @@ void setup()
   Serial.print("Tube Voltage: ");
   Serial.println(board.MesureVoltage());
 
-  randomSeed(analogRead(0)); 
+  randomSeed(analogRead(0));
 
-  terminal.commands[0] = Command("volt", [](String str) -> void { Serial.println(board.MesureVoltage()); });
+  terminal.commands[0] = Command("volt", [](String str) -> void
+                                 { Serial.println(board.MesureVoltage()); });
   terminal.commands[1] = Command("wifi", SetupWiFi);
-  terminal.commands[2] = Command("timeout", [](String str) -> void {
+  terminal.commands[2] = Command("timeout", [](String str) -> void
+                                 {
     if (str.length() <= 0)
     {
       Serial.print("Current WiFi TimeOut is Setting in...");
       Serial.println(TIME_OUT);
       return;
     }
-    TIME_OUT = str.toInt();
-  });
-  terminal.commands[3] = Command("ntp", [](String str) -> void {
+    TIME_OUT = str.toInt(); });
+  terminal.commands[3] = Command("ntp", [](String str) -> void
+                                 {
     if (str.length() <= 0)
     {
       Serial.print("Adusting Time By Ntp via ");
@@ -96,8 +99,8 @@ void setup()
     Serial.print("NTP Server address changed To  ");
     Serial.println(str);
     str.toCharArray(NTP_SERVER,sizeof(NTP_SERVER));
-    Serial.println("Completed!!");
-  });
+    Serial.println("Completed!!"); });
+
   WiFiConnect();
 
   Serial.print("WiFi Connection: ");
@@ -115,9 +118,9 @@ void loop()
   if (mode == CLOCK)
   {
     nixie.SetSchematic(SetSchematicByTimeCode(rtc.GetTime(HOUR), rtc.GetTime(MINUTE), rtc.GetTime(SECOND)));
-    if (bitRead(SwState, 7)) //ACCEPT
+    if (bitRead(SwState, 7)) // ACCEPT
       mode = DIVERGENCE;
-    if (bitRead(SwState, 6)) //BACK
+    if (bitRead(SwState, 6)) // BACK
     {
       mode = ADJUSTMENT;
       if (WiFi.isConnected())
@@ -135,13 +138,13 @@ void loop()
 
   if (mode == DIVERGENCE)
   {
-    if(bitRead(SwState,7)) mode = CLOCK;
-    if(bitRead(SwState,6)) mode = CLOCK;
+    if (bitRead(SwState, 7))
+      mode = CLOCK;
+    if (bitRead(SwState, 6))
+      mode = CLOCK;
     mode_DivergenceClock();
     return;
   }
-  
-  
 
   if (mode == ADJUSTMENT)
   {
@@ -157,12 +160,12 @@ void loop()
 
 void mode_Ntpadjustment(uint8_t SwState)
 {
-  if (bitRead(SwState, 7)) //ACCEPT
+  if (bitRead(SwState, 7)) // ACCEPT
   {
     AdjustNtp();
     mode = CLOCK;
   }
-  if (bitRead(SwState, 6)) //BACK
+  if (bitRead(SwState, 6)) // BACK
     mode = CLOCK;
   if (bitRead(SwState, 5)) //-
     mode = ADJUSTMENT;
@@ -194,9 +197,9 @@ void mode_ManualAdjustment(uint8_t SwState)
   switch (adj.selectIndex)
   {
   case YEAR:
-    if (bitRead(SwState, 7)) //ACCEPT
+    if (bitRead(SwState, 7)) // ACCEPT
       adj.selectIndex = MONTH;
-    if (bitRead(SwState, 6)) //BACK
+    if (bitRead(SwState, 6)) // BACK
       mode = CLOCK;
     if (bitRead(SwState, 5)) //-
       adj.year--;
@@ -204,9 +207,9 @@ void mode_ManualAdjustment(uint8_t SwState)
       adj.year++;
     break;
   case MONTH:
-    if (bitRead(SwState, 7)) //ACCEPT
+    if (bitRead(SwState, 7)) // ACCEPT
       adj.selectIndex = DAY;
-    if (bitRead(SwState, 6)) //BACK
+    if (bitRead(SwState, 6)) // BACK
       adj.selectIndex = YEAR;
     if (bitRead(SwState, 5)) //-
       adj.month--;
@@ -214,9 +217,9 @@ void mode_ManualAdjustment(uint8_t SwState)
       adj.month++;
     break;
   case DAY:
-    if (bitRead(SwState, 7)) //ACCEPT
+    if (bitRead(SwState, 7)) // ACCEPT
       adj.selectIndex = HOUR;
-    if (bitRead(SwState, 6)) //BACK
+    if (bitRead(SwState, 6)) // BACK
       adj.selectIndex = MONTH;
     if (bitRead(SwState, 5)) //-
       adj.day--;
@@ -224,9 +227,9 @@ void mode_ManualAdjustment(uint8_t SwState)
       adj.day++;
     break;
   case HOUR:
-    if (bitRead(SwState, 7)) //ACCEPT
+    if (bitRead(SwState, 7)) // ACCEPT
       adj.selectIndex = MINUTE;
-    if (bitRead(SwState, 6)) //BACK
+    if (bitRead(SwState, 6)) // BACK
       adj.selectIndex = DAY;
     if (bitRead(SwState, 5)) //-
       adj.hour--;
@@ -234,9 +237,9 @@ void mode_ManualAdjustment(uint8_t SwState)
       adj.hour++;
     break;
   case MINUTE:
-    if (bitRead(SwState, 7)) //ACCEPT
+    if (bitRead(SwState, 7)) // ACCEPT
       adj.selectIndex = SECOND;
-    if (bitRead(SwState, 6)) //BACK
+    if (bitRead(SwState, 6)) // BACK
       adj.selectIndex = HOUR;
     if (bitRead(SwState, 5)) //-
       adj.minute--;
@@ -244,12 +247,12 @@ void mode_ManualAdjustment(uint8_t SwState)
       adj.minute++;
     break;
   case SECOND:
-    if (bitRead(SwState, 7)) //ACCEPT
+    if (bitRead(SwState, 7)) // ACCEPT
     {
       rtc.SetDateTime(adj.year, adj.month, adj.day, adj.hour, adj.minute, adj.second);
       mode = CLOCK;
     }
-    if (bitRead(SwState, 6)) //BACK
+    if (bitRead(SwState, 6)) // BACK
       adj.selectIndex = MINUTE;
     if (bitRead(SwState, 5)) //-
       adj.second--;
@@ -344,56 +347,73 @@ void mode_ManualAdjustment(uint8_t SwState)
   nixie.SetSchematic(*schematic);
 }
 
-void mode_DivergenceClock(){
+void mode_DivergenceClock()
+{
   int sec = rtc.GetTime(SECOND);
   int minute = rtc.GetTime(MINUTE);
   int hour = rtc.GetTime(HOUR);
 
-  if(!divergenceFlag){
-    
-    if(minute % 3 == 0) {
-      if(sec == 0){
+  SetSchematicByTimeCode(hour, minute, sec);
+  schematic[0][1] = DP_LDP;
+
+  if (!divergenceFlag)
+  {
+
+    if (minute % 3 == 0)
+    {
+      if (sec == 0)
+      {
         divergenceFlag = true;
+        elapsed_time = millis();
       }
     }
   }
 
-  if(divergenceFlag){
+  if (divergenceFlag && (millis() - elapsed_time) / 35 > 1)
+  {
+
     uint8_t numbers[6];
-    
-    for(int n = 0; n < sizeof(numbers); n++){
-      schematic[n][0] = random(0,10);
+
+    for (int n = 0; n < sizeof(numbers); n++)
+    {
+      schematic[n][0] = random(0, 10);
     }
     schematic[1][1] = DP_RDP;
     schematic[3][1] = DP_RDP;
     schematic[5][1] = DP_RDP;
 
-    if(elapsed_time + 500 < millis()){
-    schematic[2][0] = minute / 10;
+    if (elapsed_time + 500 < millis())
+    {
+      schematic[2][0] = minute / 10;
     }
-    if(elapsed_time + 1000 < millis()){
+    if (elapsed_time + 1000 < millis())
+    {
       schematic[4][0] = sec / 10;
     }
-    if(elapsed_time + 1500 < millis()){
-      schematic[4][0] = hour / 10;
+    if (elapsed_time + 1500 < millis())
+    {
+      schematic[0][0] = hour / 10;
     }
-    if(elapsed_time + 2000 < millis()){
-      schematic[4][0] = minute % 10;
+    if (elapsed_time + 2000 < millis())
+    {
+      schematic[3][0] = minute % 10;
     }
-    if(elapsed_time + 2500 < millis()){
-      schematic[4][0] = hour % 10;
+    if (elapsed_time + 2500 < millis())
+    {
+      schematic[5][0] = hour % 10;
     }
-    
+    if (elapsed_time + 3500 < millis())
+    {
+      schematic[1][0] = hour % 10;
+      elapsed_time = millis();
+      divergenceFlag = false;
+    }
   }
+
   nixie.SetSchematic(*schematic);
-  if(elapsed_time + 3000 < millis()){
-    divergenceFlag = false;
-    nixie.SetSchematic(SetSchematicByTimeCode(rtc.GetTime(HOUR), rtc.GetTime(MINUTE), rtc.GetTime(SECOND)));
-    elapsed_time = millis;
-  }
+ 
   return;
 }
-
 
 void WifiEvent(WiFiEvent_t e)
 {
@@ -413,7 +433,7 @@ void WiFiConnect()
 }
 void WiFiConnect(char *ssid = "", char *pass = "")
 {
-  //Connect Wifi
+  // Connect Wifi
   WiFi.disconnect(true, true);
   if (sizeof(ssid) > 0)
     WiFi.begin(ssid, pass);
@@ -434,8 +454,8 @@ void WiFiConnect(char *ssid = "", char *pass = "")
   Serial.println("Connected!!");
   WiFi.onEvent(WifiEvent);
 }
-///Str =SSID Password
-///Str =
+/// Str =SSID Password
+/// Str =
 void SetupWiFi(String str)
 {
   if (str.length() <= 0)
