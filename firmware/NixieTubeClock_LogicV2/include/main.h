@@ -1,5 +1,7 @@
 #include <Arduino.h>
 
+#define DIVERGENCE_PERIOD 10 //m
+#define DIVERGENCE_WHEEL_PERIOD 2 //ms
 
 enum Mode
 {

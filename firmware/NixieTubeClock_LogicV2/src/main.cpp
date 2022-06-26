@@ -30,6 +30,7 @@ bool divergenceFlag = false;
 //*** PROTTYPE ***//
 void IRAM_ATTR Display_Interrupt(void) { nixie.ShowDisplay(); }
 
+void addCommands();
 int *SetSchematicByTimeCode(int d1, int d2, int d3);
 void mode_ManualAdjustment(uint8_t SwState);
 void mode_Ntpadjustment(uint8_t SwState);
@@ -72,11 +73,23 @@ void setup()
   Serial.print("Tube Voltage: ");
   Serial.println(board.MesureVoltage());
 
+  addCommands();
+
   randomSeed(analogRead(0));
 
+  WiFiConnect();
+
+  Serial.print("WiFi Connection: ");
+  Serial.println(WiFi.isConnected() ? "true" : "false");
+}
+
+void addCommands()
+{
   terminal.commands[0] = Command("volt", [](String str) -> void
                                  { Serial.println(board.MesureVoltage()); });
+
   terminal.commands[1] = Command("wifi", SetupWiFi);
+
   terminal.commands[2] = Command("timeout", [](String str) -> void
                                  {
     if (str.length() <= 0)
@@ -86,6 +99,7 @@ void setup()
       return;
     }
     TIME_OUT = str.toInt(); });
+
   terminal.commands[3] = Command("ntp", [](String str) -> void
                                  {
     if (str.length() <= 0)
@@ -100,11 +114,6 @@ void setup()
     Serial.println(str);
     str.toCharArray(NTP_SERVER,sizeof(NTP_SERVER));
     Serial.println("Completed!!"); });
-
-  WiFiConnect();
-
-  Serial.print("WiFi Connection: ");
-  Serial.println(WiFi.isConnected() ? "true" : "false");
 }
 
 void loop()
@@ -353,13 +362,12 @@ void mode_DivergenceClock()
   int minute = rtc.GetTime(MINUTE);
   int hour = rtc.GetTime(HOUR);
 
-  SetSchematicByTimeCode(hour, minute, sec);
   schematic[0][1] = DP_LDP;
 
   if (!divergenceFlag)
   {
-
-    if (minute % 3 == 0)
+    // Divergence clock mode for each 5minutes
+    if (minute % DIVERGENCE_PERIOD == 0)
     {
       if (sec == 0)
       {
@@ -369,7 +377,7 @@ void mode_DivergenceClock()
     }
   }
 
-  if (divergenceFlag && (millis() - elapsed_time) / 35 > 1)
+  if (divergenceFlag && (millis() - elapsed_time) % DIVERGENCE_WHEEL_PERIOD == 1)
   {
 
     uint8_t numbers[6];
@@ -402,16 +410,20 @@ void mode_DivergenceClock()
     {
       schematic[5][0] = hour % 10;
     }
-    if (elapsed_time + 3500 < millis())
+    if (elapsed_time + 3000 < millis())
     {
       schematic[1][0] = hour % 10;
       elapsed_time = millis();
       divergenceFlag = false;
     }
   }
-
+  if (!divergenceFlag)
+  {
+    SetSchematicByTimeCode(hour, minute, sec);
+    schematic[0][1] = DP_LDP;
+  }
   nixie.SetSchematic(*schematic);
- 
+
   return;
 }
 
